@@ -12,11 +12,13 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Rnwood.Smtp4dev.Server
 {
     public class ImapServer
     {
+        
         public ImapServer(IMessagesRepository messagesRepository, IOptionsMonitor<ServerOptions> serverOptions, Func<Smtp4devDbContext> dbContextFactory)
         {
             this.messagesRepository = messagesRepository;
@@ -57,7 +59,7 @@ namespace Rnwood.Smtp4dev.Server
         {
             if (!serverOptions.CurrentValue.ImapPort.HasValue)
             {
-                Console.WriteLine($"IMAP server disabled");
+                log.Information("IMAP server disabled");
                 return;
             }
 
@@ -69,7 +71,7 @@ namespace Rnwood.Smtp4dev.Server
             imapServer.SessionCreated += (o, ea) => new SessionHandler(ea.Session, this.messagesRepository);
 
             imapServer.Start();
-            Console.WriteLine($"IMAP Server listening on port {imapServer.Bindings[0].Port}");
+            log.Information("IMAP Server listening on {port}", imapServer.Bindings[0].Port);
         }
 
         public void Stop()
@@ -81,10 +83,11 @@ namespace Rnwood.Smtp4dev.Server
         private IMessagesRepository messagesRepository;
         private IMAP_Server imapServer;
         private IOptionsMonitor<ServerOptions> serverOptions;
+        private readonly ILogger log = Log.ForContext<ImapServer>();
 
         private void Logger_WriteLog(object sender, LumiSoft.Net.Log.WriteLogEventArgs e)
         {
-            Console.WriteLine(e.LogEntry.Text);
+            log.Information(e.LogEntry.Text);
         }
 
         class SessionHandler

@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.SpaServices;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Rewrite;
+using Serilog;
 
 namespace Rnwood.Smtp4dev
 {
@@ -40,18 +41,18 @@ namespace Rnwood.Smtp4dev
             {
                 if (string.IsNullOrEmpty(serverOptions.Database))
                 {
-                    Console.WriteLine("Using in memory database.");
+                    Log.Logger.Information("Using in memory database.");
                     opt.UseInMemoryDatabase("main");
                 }
                 else
                 {
                     if (serverOptions.RecreateDb && File.Exists(serverOptions.Database))
                     {
-                        Console.WriteLine("Deleting Sqlite database.");
+                        Log.Logger.Information("Deleting Sqlite database.");
                         File.Delete(serverOptions.Database);
                     }
 
-                    Console.WriteLine("Using Sqlite database at " + Path.GetFullPath(serverOptions.Database));
+                    Log.Logger.Information("Using Sqlite database at {dbLocation}" ,Path.GetFullPath(serverOptions.Database));
                     opt.UseSqlite($"Data Source='{serverOptions.Database}'");
                 }
             }, ServiceLifetime.Transient, ServiceLifetime.Singleton);
@@ -91,7 +92,7 @@ namespace Rnwood.Smtp4dev
 
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory log)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             ServerOptions serverOptions = Configuration.GetSection("ServerOptions").Get<ServerOptions>();
 
@@ -125,10 +126,6 @@ namespace Rnwood.Smtp4dev
                     }
                 });
 
-
-
-
-
                 Smtp4devDbContext context = subdir.ApplicationServices.GetService<Smtp4devDbContext>();
                 if (!context.Database.IsInMemory())
                 {
@@ -152,9 +149,6 @@ namespace Rnwood.Smtp4dev
             {
                 configure(app);
             }
-
-
         }
-
     }
 }
